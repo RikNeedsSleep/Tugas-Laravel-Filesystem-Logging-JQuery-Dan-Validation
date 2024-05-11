@@ -25,40 +25,35 @@
                 <form id="productForm" class="mt-3" action="{{ route('postRequest', ['user' => $user->id]) }}"
                     method="POST">
                     @csrf
-                    <div class="mb-1">
+                        <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Gambar Produk</label>
                         <input type="file" class="form-control" name="image" id="image">
-                    </div>                    
-                    <!-- Error message for image -->
-                    <div class="text-danger" id="image_error"></div>
+                        <span class="text-danger" id="image_error"></span>
+                    </div>
                     <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Nama Produk</label>
                         <input type="text" class="form-control" name="nama" id="nama"
                             placeholder="Masukkan nama produk">
+                        <span class="text-danger" id="nama_error"></span>
                     </div>
-                    <!-- Error message for nama -->
-                    <div class="text-danger" id="nama_error"></div>
                     <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Berat</label>
                         <input type="number" class="form-control" name="berat" id="berat"
                             placeholder="Masukkan berat produk">
+                        <span class="text-danger" id="berat_error"></span>
                     </div>
-                    <!-- Error message for berat -->
-                    <div class="text-danger" id="berat_error"></div>
                     <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Harga</label>
                         <input type="number" class="form-control" name="harga" id="harga"
                             placeholder="Masukkan harga produk">
+                        <span class="text-danger" id="harga_error"></span>
                     </div>
-                    <!-- Error message for harga -->
-                    <div class="text-danger" id="harga_error"></div>
                     <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Stok</label>
                         <input type="number" class="form-control" name="stok" id="stok"
                             placeholder="Masukkan stok produk">
+                        <span class="text-danger" id="stok_error"></span>
                     </div>
-                    <!-- Error message for stok -->
-                    <div class="text-danger" id="stok_error"></div>
                     <div class="mb-1">
                         <label for="exampleFormControlInput1" class="form-label fw-semibold">Kondisi</label>
                         <select class="form-select form-control" aria-label="Default select example" name="kondisi"
@@ -67,73 +62,108 @@
                             <option value="Bekas">Bekas</option>
                             <option value="Baru">Baru</option>
                         </select>
+                        <span class="text-danger" id="kondisi_error"></span>
                     </div>
-                    <!-- Error message for kondisi -->
-                    <div class="text-danger" id="kondisi_error"></div>
                     <div class="mb-3">
                         <label for="exampleFormControlTextarea1" class="form-label fw-semibold">Deskripsi</label>
                         <textarea class="form-control" name="deskripsi" id="deskripsi" rows="3"
                             placeholder="Tuliskan deskripsi produk yang akan dijual"></textarea>
+                        <span class="text-danger" id="deskripsi_error"></span>
                     </div>
-                    <!-- Error message for deskripsi -->
-                    <div class="text-danger" id="deskripsi_error"></div>
                     <div class="d-flex">
-                        <button id="submitButton" class="btn btn-dark mx-auto" type="submit">Submit</button>
+                        <button class="btn btn-dark mx-auto" type="submit">Submit</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</body>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
-</script>
-<script>
-    $(document).ready(function () {
-        $('#productForm').submit(function (e) {
-            e.preventDefault();
 
-            // Menghapus pesan error sebelum validasi
-            $('.text-danger').text('');
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#productForm').submit(function (e) {
+                e.preventDefault();
 
-            var isValid = true;
+                // Menghapus pesan error sebelum validasi
+                $('.text-danger').text('');
 
-            // Validasi menggunakan JavaScript
-            var image = $('#image')[0].files[0]; // Mengambil file gambar
+                var isValid = true;
 
-            if (!image) {
-                $('#image_error').text('Error. File Gambar wajib diunggah.');
-                isValid = false;
-            }
+                // Validasi menggunakan JavaScript
+                var image = $('#image')[0].files[0]; // Mengambil file gambar
 
-            // Lakukan AJAX request untuk menyimpan data jika lolos validasi
-            if (isValid) {
-                var formData = new FormData();
-                formData.append('image', image);
-                formData.append('nama', $('#nama').val());
-                formData.append('berat', $('#berat').val());
-                formData.append('harga', $('#harga').val());
-                formData.append('stok', $('#stok').val());
-                formData.append('kondisi', $('#kondisi').val());
-                formData.append('deskripsi', $('#deskripsi').val());
+                if (!image) {
+                    $('#image_error').text('Error. File Gambar wajib diunggah.');
+                    isValid = false;
+                }
 
-                $.ajax({
-                    url: $(this).attr('action'),
-                    method: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (response) {
-                        // Handle respon dari server
-                        console.log(response);
-                    },
-                    error: function (xhr, status, error) {
-                        // Handle error
-                        console.error(xhr.responseText);
-                    }
-                });
-            }
+                // Validasi menggunakan JavaScript
+                var nama = $('#nama').val();
+                var berat = $('#berat').val();
+                var harga = $('#harga').val();
+                var stok = $('#stok').val();
+                var kondisi = $('#kondisi').val();
+                var deskripsi = $('#deskripsi').val();
+
+                if (nama.trim() === '') {
+                    $('#nama_error').text('Error. Field Nama wajib diisi.');
+                    isValid = false;
+                }
+
+                if (berat.trim() === '') {
+                    $('#berat_error').text('Error. Field Berat wajib diisi.');
+                    isValid = false;
+                }
+
+                if (harga.trim() === '') {
+                    $('#harga_error').text('Error. Field Harga wajib diisi.');
+                    isValid = false;
+                }
+
+                if (stok.trim() === '') {
+                    $('#stok_error').text('Error. Field Stok wajib diisi.');
+                    isValid = false;
+                }
+
+                if (kondisi === '0') {
+                    $('#kondisi_error').text('Error. Field Kondisi wajib dipilih.');
+                    isValid = false;
+                }
+
+                if (deskripsi.trim() === '') {
+                    $('#deskripsi_error').text('Error. Field Deskripsi wajib diisi.');
+                    isValid = false;
+                }
+
+                // Lakukan AJAX request untuk menyimpan data jika lolos validasi
+                if (isValid) {
+                    var formData = new FormData();
+                    formData.append('image', image);
+                    formData.append('nama', nama);
+                    formData.append('berat', berat);
+                    formData.append('harga', harga);
+                    formData.append('stok', stok);
+                    formData.append('kondisi', kondisi);
+                    formData.append('deskripsi', deskripsi);
+
+                    $.ajax({
+                        url: $(this).attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: function (response) {
+                            // Handle respon dari server
+                            console.log(response);
+                        },
+                        error: function (xhr, status, error) {
+                            // Handle error
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
         });
-    });
-</script>
+    </script>
+</body>
+
