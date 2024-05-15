@@ -2,38 +2,144 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    public function cafe(Request $request)
+    public function register()
     {
-        $list = [
-            [
-                'menu' => 'Espresso',
-                'price' => 18000,
-                'description' => 'Espresso adalah minuman kopi khas Italia yang disajikan dalam cangkir kecil. Ini dibuat dengan mengekstrak kopi yang sangat pekat dari bubuk kopi halus menggunakan mesin espresso yang menerapkan tekanan tinggi. Espresso memiliki rasa kopi yang kaya dan intens, dengan lapisan crema berminyak di atasnya. ',
-                'image' => 'https://www.acouplecooks.com/wp-content/uploads/2020/09/Latte-Art-066s.jpg'
-            ],
-            [
-                'menu' => 'Macchiato',
-                'price' => 20000,
-                'description' => 'Macchiato adalah minuman kopi yang berasal dari Italia yang terdiri dari espresso yang dicampur dengan sedikit susu atau busa susu. Nama "macchiato" berasal dari bahasa Italia yang berarti "bercak" atau "menandai", yang mengacu pada tambahan susu yang hanya sedikit dan memberikan tanda pada espresso yang kuat.',
-                'image' => 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMvyNxUJj8bEHdD-3gc0ktbaYkXZO9qfbnhoZ2GA23cw&s'
-            ],
-            [
-                'menu' => 'Latte',
-                'price' => 25000,
-                'description' => 'Latte adalah minuman kopi yang populer yang terdiri dari espresso dicampur dengan susu panas dan ditutupi dengan lapisan busa susu. Rasio kopi dengan susu biasanya adalah satu shot espresso untuk sebagian besar susu panas, dan lapisan busa susu di atasnya memberikan tekstur yang lembut dan kaya.',
-                'image' => 'https://www.allrecipes.com/thmb/Wh0Qnynwdxok4oN0NZ1Lz-wl0A8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/9428203-9d140a4ed1424824a7ddd358e6161473.jpg'
-            ],
-            [
-                'menu' => 'Capuccino',
-                'price' => 19000,
-                'description' => 'Cappuccino adalah minuman kopi yang terdiri dari espresso, susu panas, dan busa susu. Minuman ini memiliki rasio kopi dengan susu yang seimbang, yaitu satu shot espresso dengan jumlah susu yang sama dengan busa susu di atasnya.',
-                'image' => 'https://insanelygoodrecipes.com/wp-content/uploads/2023/06/Cup-of-Cappuccino-1024x1024.jpg'
-            ],
-        ];
-        return view('cafe', ['list' => $list]);
+        return view('register');
+    }
+
+    public function registerUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+            'gender' => 'required|in:male,female',
+            'age' => 'required|integer|min:1',
+            'birth' => 'required|date',
+            'address' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('register')
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'gender' => $request->gender,
+            'age' => $request->age,
+            'birth' => $request->birth,
+            'address' => $request->address,
+        ]);
+
+        // assign role
+        $user->assignRole('superadmin');
+
+        if ($user) {
+            return redirect()->route('register')
+                ->with('success', 'User created successfully');
+        } else {
+            return redirect()->route('register')
+                ->with('error', 'Failed to create user');
+        }
+    }
+
+    public function login()
+    {
+        return view('login');
+    }
+
+    public function loginUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('login')
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            $request->session()->regenerate();
+            return redirect()->route('dashboard');
+        } else {
+            return redirect()->route('login')
+                ->with('error', 'Login failed email or password is incorrect');
+        }
+    }
+
+    public function dashboard()
+    {
+        $user = Auth::user();
+
+        // get user role
+        // dd($user->roles[0]->name);
+        
+        // change role
+        // $user->roles()->detach();
+        // $user->assignRole('superadmin');
+
+        // if (!$user) {
+        //     return redirect()->route('login');
+        // }
+
+        return view('dashboard', compact('user'));
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+
+        return redirect()->route('login');
+    }
+
+    public function loginGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function loginGoogleCallback()
+    {
+        $user = Socialite::driver('google')->user();
+
+        $existingUser = User::where('email', $user->email)->first();
+
+        if ($existingUser) {
+            Auth::login($existingUser);
+        } else {
+            $newUser = new User();
+            $newUser->google_id = $user->id;
+            $newUser->name = $user->name;
+            $newUser->email = $user->email;
+            $newUser->password = Hash::make(Str::random(15));
+            $newUser->gender = 'male';
+            $newUser->age = 25;
+            $newUser->birth = '1996-05-13';
+            $newUser->address = 'Jakarta Selatan';
+            $newUser->save();
+
+            // assign role
+            $newUser->assignRole('user');
+
+            Auth::login($newUser);
+        }
+
+        return redirect()->route('dashboard');
     }
 }
